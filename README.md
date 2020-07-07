@@ -2,7 +2,7 @@
 Create a changelog file from all the merged pull requests
 
 ## Usage
-`./changelog.py --repo-url <user/repo> --log-level LEVEL --token <github_api_personal_token>`
+`./changelog.py --repo-url <user/repo> --log-level <LEVEL> --token <github_api_personal_token>`
 
 where:
 - `--repo_url` (mandatory) is the url of the repository (e.g. `neuropoly/spinalcordtoolbox`)

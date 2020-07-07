@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import sys, io, time
+import sys, io
 import logging
 import datetime
 import json
@@ -44,7 +44,6 @@ class GithubAPI(object):
 
         if search_api['remaining'] == 0:
             raise ValueError(f"Search API limit reached! Retry at {datetime.datetime.fromtimestamp(search_api['reset'])}")
-
 
     def request(self, url, method="GET", headers=None, params=None, data=None):
         headers = headers or {}
@@ -167,21 +166,26 @@ def get_parser():
     import argparse
 
     parser = argparse.ArgumentParser(
-     description="Changelog generator script",
+        description="Changelog generator script",
+        add_help=False,
     )
 
-    parser.add_argument("--log-level",
-     default="INFO",
-     help="Logging level (eg. INFO, see Python logging docs)",
+    mandatory = parser.add_argument_group("required arguments")
+    mandatory.add_argument("--repo-url",
+        required=True,
+        help="Repository url in the format <GITHUB_USER/REPO_NAME>. Example: neuropoly/spinalcordtoolbox",
     )
 
-    parser.add_argument("--repo-url",
-     required=True,
-     help="Repository url in the format <GITHUB_USER/REPO_NAME>. Example: neuropoly/spinalcordtoolbox",
+    optional = parser.add_argument_group('optional arguments')
+    optional.add_argument("-h", "--help", action="help", help="show this help message and exit")
+
+    optional.add_argument("--log-level",
+        default="INFO",
+        help="Logging level (eg. INFO, see Python logging docs)",
     )
 
-    parser.add_argument("--token",
-     help="Github API personal access token for authentication. See https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token",
+    optional.add_argument("--token",
+        help="Github API personal access token for authentication. See https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token",
     )
 
     return parser
