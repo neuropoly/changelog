@@ -235,7 +235,7 @@ def main():
 # provides customization to changelog for some repos
 options = {
     'default': {
-        'labels': ['bug', 'feature', 'documentation'],
+        'labels': ['bug', 'enhancement', 'feature', 'documentation'],
         'generator': default_changelog_generator,
     },
     'spinalcordtoolbox': {
@@ -250,5 +250,3 @@ options = {
 
 if __name__ == '__main__':
     raise SystemExit(main())
-
-
