@@ -250,7 +250,7 @@ options = {
     'ivadomed': {
         'labels': ['bug', 'dependencies', 'documentation', 'enhancement'],
         'generator': default_changelog_generator,
-    },
+    }
 }
 
 if __name__ == '__main__':
