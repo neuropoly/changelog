@@ -240,7 +240,7 @@ def main():
 # provides customization to changelog for some repos
 options = {
     'default': {
-        'labels': ['bug', 'enhancement', 'feature', 'documentation'],
+        'labels': [None],
         'generator': default_changelog_generator,
     },
     'spinalcordtoolbox': {
@@ -251,10 +251,6 @@ options = {
         'labels': ['bug', 'dependencies', 'documentation', 'enhancement'],
         'generator': default_changelog_generator,
     },
-    'data-multi-subject': {
-        'labels': [None],
-        'generator': default_changelog_generator,
-    }
 }
 
 if __name__ == '__main__':
