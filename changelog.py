@@ -105,6 +105,8 @@ class GithubAPI(object):
         query = f'milestone:"{milestone}" is:pr repo:{self.repo_url} state:closed is:merged'
         if label:
             query += f' label:{label}'
+        else:
+            query += f' no:label'
         payload = {'q': query}
         r = self.request(url=url, params=payload).json()
         logger.info(f"Milestone: {milestone}, Label: {label}, Count: {r['total_count']}")
@@ -214,7 +216,10 @@ def main():
         pull_requests = api.search(milestone['title'], label)
         items = pull_requests.get('items')
         if items:
-            lines.append(f"\n**{label.upper()}**\n")
+            if label:
+                lines.append(f"\n**{label.upper()}**\n")
+            else:
+                lines.append(f"\n**UNLABELED**\n")
             changelog_pr = changelog_pr.union(set([x['html_url'] for x in items]))
             for x in pull_requests.get('items'):
                 items = [ generator(x) ]
@@ -244,6 +249,10 @@ options = {
     },
     'ivadomed': {
         'labels': ['bug', 'dependencies', 'documentation', 'enhancement'],
+        'generator': default_changelog_generator,
+    },
+    'data-multi-subject': {
+        'labels': [None],
         'generator': default_changelog_generator,
     }
 }
