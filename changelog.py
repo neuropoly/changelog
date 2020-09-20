@@ -218,8 +218,6 @@ def main():
         if items:
             if label:
                 lines.append(f"\n**{label.upper()}**\n")
-            else:
-                lines.append(f"\n**UNLABELED**\n")
             changelog_pr = changelog_pr.union(set([x['html_url'] for x in items]))
             for x in pull_requests.get('items'):
                 items = [ generator(x) ]
