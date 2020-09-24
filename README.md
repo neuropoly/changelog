@@ -20,4 +20,4 @@ where:
 
 The script will produce a `[user]_[repo]_changelog.[tagId].md` file with changelog contents. The contents can then be verified manually and copied over to the respective project `CHANGES.md` file.
 
-Contributions are welcome 🎉 
+Contributions are welcome (via a fork of the repository and pull request) 🎉 
