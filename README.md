@@ -2,7 +2,16 @@
 Create a changelog file from all the merged pull requests
 
 ## Usage
-`./changelog.py --repo-url <user/repo> --log-level <LEVEL> --token <github_api_personal_token>`
+Install with pip (only do it once):
+````
+git clone git@github.com:neuropoly/changelog.git .
+cd changelog
+pip install -e .
+````
+Then you can use changelog from anywhere:
+````
+changelog --repo-url <user/repo> [--log-level <LEVEL> --token <github_api_personal_token>]
+````
 
 where:
 - `--repo_url` (mandatory) is the url of the repository (e.g. `neuropoly/spinalcordtoolbox`)
