@@ -10,3 +10,5 @@ where:
 - `--token` (optional) is your personal access token which was generated via your github account (see https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). Making authenticated requests increases the API rate limits for some resources.
 
 The script will produce a `[user]_[repo]_changelog.[tagId].md` file with changelog contents. The contents can then be verified manually and copied over to the respective project `CHANGES.md` file.
+
+Contributions are welcome 🎉 
