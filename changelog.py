@@ -248,6 +248,10 @@ options = {
     'ivadomed': {
         'labels': ['bug', 'dependencies', 'documentation', 'enhancement'],
         'generator': default_changelog_generator,
+    },
+    'axondeepseg': {
+        'labels': ['bug', 'enhancement', 'feature', 'documentation', 'installation', 'testing'],
+        'generator': default_changelog_generator,
     }
 }
 
