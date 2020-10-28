@@ -176,8 +176,7 @@ def get_parser():
     )
 
     mandatory = parser.add_argument_group("required arguments")
-    mandatory.add_argument("--repo-url",
-        required=True,
+    mandatory.add_argument("repo-url",
         help="Repository url in the format <GITHUB_USER/REPO_NAME>. Example: neuropoly/spinalcordtoolbox",
     )
 
@@ -198,8 +197,9 @@ def main():
 
     logging.basicConfig(stream=sys.stdout, level=args.log_level, format="%(levelname)s %(message)s")
 
-    api = GithubAPI(repo_url=args.repo_url)
-    user, repo = args.repo_url.split('/')
+    repo_url = getattr(args, 'repo-url')
+    api = GithubAPI(repo_url=repo_url)
+    user, repo = repo_url.split('/')
 
     milestone = api.get_latest_milestone()
     tag = milestone['title'].split()[-1]
