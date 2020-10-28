@@ -10,9 +10,9 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='changelog',
-    version='1.0',
-    python_requires='>=3.7',
+    name='changelog-neuropoly',
+    version='1.0.0',
+    python_requires='>=3.5',
     description='Create a changelog file from all the merged pull requests.',
     url='https://github.com/neuropoly/changelog',
     author='NeuroPoly Lab, Polytechnique Montreal',
