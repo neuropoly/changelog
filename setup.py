@@ -24,11 +24,12 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     keywords='',
+    install_requires=['requests'],
     packages=find_packages(exclude=['.git']),
     include_package_data=True,
     entry_points={
         'console_scripts': [
-            'changelog = changelog:main',
+            'changelog=changelog.changelog:main',
         ],
     },
 )
