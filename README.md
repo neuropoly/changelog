@@ -18,12 +18,17 @@ pip install -e .
 
 Then you can use changelog from anywhere:
 ````
-changelog --repo-url <user/repo> [--log-level <LEVEL>]
-````
+usage: changelog.py [-h] [--log-level LOG_LEVEL] repo-url
 
-where:
-- `--repo_url` (mandatory) is the url of the repository (e.g. `neuropoly/spinalcordtoolbox`)
-- `--log-level` (optional) is the logging level as per python logging docs (e.g. INFO, DEBUG, etc)
+Changelog generator script
+
+required arguments:
+  repo-url               Repository url in the format <GITHUB_USER/REPO_NAME>. Example: neuropoly/spinalcordtoolbox
+
+optional arguments:
+  -h, --help             show this help message and exit
+  --log-level LOG_LEVEL  Logging level (eg. INFO, see Python logging docs)
+````
 
 To use a Github Personal Access Token (https://github.com/settings/tokens) simply export the token string via the `GITHUB_TOKEN` environment variable.
 
