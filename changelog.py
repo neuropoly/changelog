@@ -1,8 +1,10 @@
 #!/usr/bin/env python
-import sys, io
+import sys
+import io
+import os
 import logging
 import datetime
-import json
+import argparse
 
 import requests
 
@@ -165,7 +167,6 @@ def sct_changelog_generator(item):
         return f" - {title}. {compat_msg} [View pull request]({pr_url})"
 
 def get_parser():
-    import argparse
 
     parser = argparse.ArgumentParser(
         description="Changelog generator script",
