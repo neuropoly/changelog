@@ -10,12 +10,14 @@ import requests
 
 logger = logging.getLogger(__name__)
 
+
 class GithubAPI(object):
     """
     Simple wrapper around the github API that respects rate limiting and supports authentication.
     """
-    def __init__(self, repo_url, token=None):
-        self._token = token
+
+    def __init__(self, repo_url):
+        self._token = os.environ.get('GITHUB_TOKEN', None)
         self.repo_url = repo_url
         self.api_url_prefix = "https://api.github.com"
         self.check_rate_limit()
@@ -49,7 +51,7 @@ class GithubAPI(object):
 
     def request(self, url, method="GET", headers=None, params=None, data=None):
         headers = headers or {}
-        if self._token:
+        if self._token is not None:
             headers['Authorization'] = f"token {self._token}"
         headers['Accept'] = 'application/json'
 
@@ -187,9 +189,6 @@ def get_parser():
         help="Logging level (eg. INFO, see Python logging docs)",
     )
 
-    optional.add_argument("--token",
-        help="Github API personal access token for authentication. See https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token",
-    )
 
     return parser
 
@@ -199,7 +198,7 @@ def main():
 
     logging.basicConfig(stream=sys.stdout, level=args.log_level, format="%(levelname)s %(message)s")
 
-    api = GithubAPI(repo_url=args.repo_url, token=args.token)
+    api = GithubAPI(repo_url=args.repo_url)
     user, repo = args.repo_url.split('/')
 
     milestone = api.get_latest_milestone()
