@@ -188,6 +188,16 @@ def get_parser():
         help="Logging level (eg. INFO, see Python logging docs)",
     )
 
+    optional.add_argument("--update",
+        action='store_true',
+        help="Update an existing changelog file by prepending to it.",
+    )
+
+    optional.add_argument("--name",
+        type=str,
+        default='CHANGES.md',
+        help="Existing changelog file to use.",
+    )
 
     return parser
 
@@ -229,10 +239,35 @@ def main():
     for diff in diff_pr:
         logger.warning('Pull request not labeled: %s', diff)
 
-    filename = f"{user}_{repo}_changelog.{milestone['number']}.md"
-    with io.open(filename, "w") as changelog:
-        changelog.write('\n'.join(lines))
-    logger.info(f"Changelog saved in {filename}")
+    if args.update:
+        filename = args.name
+        if not os.path.exists(filename):
+            raise IOError(f"The provided changelog file: {filename} does not exist!")
+
+        with io.open(filename, 'r') as f:
+            original = f.readlines()
+
+        backup = f"{filename}.bak"
+        os.rename(filename, backup)
+
+        with io.open(filename, 'w') as changelog:
+            # re-use first line from existing file since it most likely contains the title
+            changelog.write(original[0] + '\n')
+
+            # write current changelog
+            changelog.write('\n'.join(lines))
+
+            # write back rest of changelog
+            changelog.writelines(original)
+
+        logger.info(f"Backup created: {backup}")
+
+    else:
+        filename = f"{user}_{repo}_changelog.{milestone['number']}.md"
+        with io.open(filename, "w") as changelog:
+            changelog.write('\n'.join(lines))
+
+    logger.info(f"Changelog written into {filename}")
 
 
 # provides customization to changelog for some repos
