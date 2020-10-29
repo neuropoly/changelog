@@ -51,6 +51,6 @@ changelog neuropoly/spinalcordtoolbox --log-level DEBUG
 
 To use a Github Personal Access Token (https://github.com/settings/tokens) simply export the token string via the `GITHUB_TOKEN` environment variable.
 
-Unless --update is passed, the script will produce a `[user]_[repo]_changelog.[tagId].md` file with changelog contents.
+Unless `--update` is passed, the script will produce a `[user]_[repo]_changelog.[tagId].md` file with changelog contents.
 
 Contributions are welcome (via a fork of the repository and pull request) 🎉
