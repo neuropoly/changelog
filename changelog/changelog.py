@@ -256,6 +256,7 @@ def main():
 
             # write current changelog
             changelog.write('\n'.join(lines))
+            changelog.write('\n')
 
             # write back rest of changelog
             changelog.writelines(original[1:])
