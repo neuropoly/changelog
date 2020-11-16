@@ -258,7 +258,7 @@ def main():
             changelog.write('\n'.join(lines))
 
             # write back rest of changelog
-            changelog.writelines(original)
+            changelog.writelines(original[1:])
 
         logger.info(f"Backup created: {backup}")
 
