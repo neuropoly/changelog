@@ -95,7 +95,7 @@ class GithubAPI(object):
                 logger.info(f"Requested milestone '{requested_title}' found in open milestones.")
             else:
                 raise ValueError(f"Requested milestone '{requested_title}' not found. "
-                                 f"Avaialble milestones: {[m['title'] for m in r]}.")
+                                 f"Available milestones: {[m['title'] for m in r]}.")
         else:
             milestone = sorted(r, key=lambda m: m['updated_at'], reverse=True)[0]
             logger.info(f"No milestone requested. Using most recently updated milestone: '{milestone['title']}'.")
