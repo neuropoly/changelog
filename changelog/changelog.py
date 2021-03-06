@@ -78,19 +78,29 @@ class GithubAPI(object):
             hooks={'response': callback}
         )
 
-    def get_latest_milestone(self):
+    def get_milestone(self, requested_title: str = None):
         """
-        Get info about the latest milestone currently open in issues.
+        Get info about specified milestone. If no milestone is specified, most recently updated milestone is used.
         """
         url = f"{self.api_url_prefix}/repos/{self.repo_url}/milestones"
         r = self.request(url).json()
-
-        logger.debug(f"Open milestones found: {r}")
-        if len(r) == 0:
+        if not r:
             raise ValueError("No open milestone was found on github.")
-        elif len(r) > 1:
-            logger.info(f"Found multiple open milestones on github. Using latest: {r[0]}")
-        return r[0]
+        else:
+            logger.debug(f"Open milestones found: {r}")  # NB: Very verbose! Outputs all info for every milestone.
+
+        if requested_title is not None:
+            milestone = next((m for m in r if m["title"] == requested_title), None)
+            if milestone:
+                logger.info(f"Requested milestone '{requested_title}' found in open milestones.")
+            else:
+                raise ValueError(f"Requested milestone '{requested_title}' not found. "
+                                 f"Avaialble milestones: {[m['title'] for m in r]}.")
+        else:
+            milestone = sorted(r, key=lambda m: m['updated_at'], reverse=True)[0]
+            logger.info(f"No milestone requested. Using most recently updated milestone: '{milestone['title']}'.")
+
+        return milestone
 
     def get_tags_compare_url(self, new_tag):
         """
@@ -199,6 +209,14 @@ def get_parser():
         help="Existing changelog file to use.",
     )
 
+    optional.add_argument(
+        "--milestone",
+        type=str,
+        default=None,
+        help="Name of milestone to generate changelog for. If not provided, the most recently updated milestone is "
+             "used instead."
+    )
+
     return parser
 
 def main():
@@ -211,7 +229,7 @@ def main():
     api = GithubAPI(repo_url=repo_url)
     user, repo = repo_url.split('/')
 
-    milestone = api.get_latest_milestone()
+    milestone = api.get_milestone(args.milestone)
     tag = milestone['title'].split()[-1]
 
     lines = [
