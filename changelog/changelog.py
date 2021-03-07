@@ -78,28 +78,37 @@ class GithubAPI(object):
             hooks={'response': callback}
         )
 
-    def get_milestone(self, requested_title: str = None):
+    def fetch_open_milestones(self):
         """
-        Get info about specified milestone. If no milestone is specified, most recently updated milestone is used.
+        Fetch list of milestone dicts. Each dict contains metadata about an open milestone.
         """
         url = f"{self.api_url_prefix}/repos/{self.repo_url}/milestones"
-        r = self.request(url).json()
-        if not r:
+        open_milestones = self.request(url).json()
+        if not open_milestones:
             raise ValueError("No open milestone was found on github.")
-        else:
-            logger.debug(f"Open milestones found: {r}")  # NB: Very verbose! Outputs all info for every milestone.
+        logger.debug(f"Open milestones found: {open_milestones}")
+        return open_milestones
 
-        if requested_title is not None:
-            milestone = next((m for m in r if m["title"] == requested_title), None)
-            if milestone:
-                logger.info(f"Requested milestone '{requested_title}' found in open milestones.")
-            else:
-                raise ValueError(f"Requested milestone '{requested_title}' not found. "
-                                 f"Available milestones: {[m['title'] for m in r]}.")
-        else:
-            milestone = sorted(r, key=lambda m: m['updated_at'], reverse=True)[0]
-            logger.info(f"No milestone requested. Using most recently updated milestone: '{milestone['title']}'.")
+    def get_most_recently_updated_milestone(self):
+        """
+        Get info about the most recently updated milestone.
+        """
+        open_milestones = self.fetch_open_milestones()
+        milestone = sorted(open_milestones, key=lambda m: m['updated_at'])[-1]
+        logger.info(f"Using most recently updated milestone: '{milestone['title']}'")
+        return milestone
 
+    def get_milestone(self, requested_title: str = None):
+        """
+        Get info about an open milestone (specified by name).
+        """
+        open_milestones = self.fetch_open_milestones()
+        milestone = next((m for m in open_milestones if m["title"] == requested_title), None)
+        if milestone:
+            logger.info(f"Requested milestone '{requested_title}' found in open milestones.")
+        else:
+            raise ValueError(f"Requested milestone '{requested_title}' not found. "
+                             f"Available milestones: {[m['title'] for m in open_milestones]}.")
         return milestone
 
     def get_tags_compare_url(self, new_tag):
@@ -229,7 +238,10 @@ def main():
     api = GithubAPI(repo_url=repo_url)
     user, repo = repo_url.split('/')
 
-    milestone = api.get_milestone(args.milestone)
+    if args.milestone is not None:
+        milestone = api.get_milestone(args.milestone)
+    else:
+        milestone = api.get_most_recently_updated_milestone()
     tag = milestone['title'].split()[-1]
 
     lines = [
