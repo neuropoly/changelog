@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+    #!/usr/bin/env python
 import sys
 import io
 import os
@@ -221,7 +221,6 @@ def get_parser():
     optional.add_argument(
         "--milestone",
         type=str,
-        default=None,
         help="Name of milestone to generate changelog for. If not provided, the most recently updated milestone is "
              "used instead."
     )
