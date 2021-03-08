@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+    #!/usr/bin/env python
 import sys
 import io
 import os
@@ -78,19 +78,38 @@ class GithubAPI(object):
             hooks={'response': callback}
         )
 
-    def get_latest_milestone(self):
+    def fetch_open_milestones(self):
         """
-        Get info about the latest milestone currently open in issues.
+        Fetch list of milestone dicts. Each dict contains metadata about an open milestone.
         """
         url = f"{self.api_url_prefix}/repos/{self.repo_url}/milestones"
-        r = self.request(url).json()
-
-        logger.debug(f"Open milestones found: {r}")
-        if len(r) == 0:
+        open_milestones = self.request(url).json()
+        if not open_milestones:
             raise ValueError("No open milestone was found on github.")
-        elif len(r) > 1:
-            logger.info(f"Found multiple open milestones on github. Using latest: {r[0]}")
-        return r[0]
+        logger.debug(f"Open milestones found: {open_milestones}")
+        return open_milestones
+
+    def get_most_recently_updated_milestone(self):
+        """
+        Get info about the most recently updated milestone.
+        """
+        open_milestones = self.fetch_open_milestones()
+        milestone = sorted(open_milestones, key=lambda m: m['updated_at'])[-1]
+        logger.info(f"Using most recently updated milestone: '{milestone['title']}'")
+        return milestone
+
+    def get_milestone(self, requested_title: str = None):
+        """
+        Get info about an open milestone (specified by name).
+        """
+        open_milestones = self.fetch_open_milestones()
+        milestone = next((m for m in open_milestones if m["title"] == requested_title), None)
+        if milestone:
+            logger.info(f"Requested milestone '{requested_title}' found in open milestones.")
+        else:
+            raise ValueError(f"Requested milestone '{requested_title}' not found. "
+                             f"Available milestones: {[m['title'] for m in open_milestones]}.")
+        return milestone
 
     def get_tags_compare_url(self, new_tag):
         """
@@ -199,6 +218,13 @@ def get_parser():
         help="Existing changelog file to use.",
     )
 
+    optional.add_argument(
+        "--milestone",
+        type=str,
+        help="Name of milestone to generate changelog for. If not provided, the most recently updated milestone is "
+             "used instead."
+    )
+
     return parser
 
 def main():
@@ -211,7 +237,10 @@ def main():
     api = GithubAPI(repo_url=repo_url)
     user, repo = repo_url.split('/')
 
-    milestone = api.get_latest_milestone()
+    if args.milestone is not None:
+        milestone = api.get_milestone(args.milestone)
+    else:
+        milestone = api.get_most_recently_updated_milestone()
     tag = milestone['title'].split()[-1]
 
     lines = [
