@@ -11,7 +11,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='changelog-neuropoly',
-    version='1.0.1',
+    version='1.1.0',
     python_requires='>=3.5',
     description='Create a changelog file from all the merged pull requests.',
     url='https://github.com/neuropoly/changelog',
