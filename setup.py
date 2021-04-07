@@ -15,6 +15,8 @@ setup(
     python_requires='>=3.5',
     description='Create a changelog file from all the merged pull requests.',
     url='https://github.com/neuropoly/changelog',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     author='NeuroPoly Lab, Polytechnique Montreal',
     author_email='neuropoly@googlegroups.com',
     license='MIT',
