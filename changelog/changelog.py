@@ -2,6 +2,7 @@
 import sys
 import io
 import os
+from itertools import chain, islice
 import logging
 import datetime
 import argparse
@@ -269,34 +270,31 @@ def main():
         logger.warning('Pull request not labeled: %s', diff)
 
     if args.update:
-        filename = args.name
-        if not os.path.exists(filename):
-            raise IOError(f"The provided changelog file: {filename} does not exist!")
-
-        with io.open(filename, 'r') as f:
-            original = f.readlines()
-
-        backup = f"{filename}.bak"
-        os.rename(filename, backup)
-
-        with io.open(filename, 'w') as changelog:
-            # re-use first line from existing file since it most likely contains the title
-            changelog.write(original[0] + '\n')
-
-            # write current changelog
-            changelog.write('\n'.join(lines))
-            changelog.write('\n')
-
+        original = io.open(args.name, 'r')
+        lines = chain(
+            # re-use first lines from existing file since it most likely contains the title
+            islice(original, 2),
+            # write the new changes
+            lines,
+            # blank link
+            [""],
             # write back rest of changelog
-            changelog.writelines(original[1:])
-
-        logger.info(f"Backup created: {backup}")
-
+            original,
+        )
+        filename = f"{args.name}.new"
     else:
         filename = f"{user}_{repo}_changelog.{milestone['number']}.md"
-        with io.open(filename, "w") as changelog:
-            changelog.write('\n'.join(lines))
+                  
+    with io.open(filename, 'w') as changelog:
+        for line in lines:
+            print(line, file=changelog)
 
+    if args.update:
+        # success, overwrite original
+        original.close()
+        os.rename(f"{args.name}.new", args.name)
+        filename = args.name
+                    
     logger.info(f"Changelog written into {filename}")
 
 
