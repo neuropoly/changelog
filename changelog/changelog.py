@@ -220,6 +220,11 @@ def get_parser():
                           help="Update an existing changelog file by prepending to it.",
                           )
 
+    optional.add_argument("--labels",
+                          nargs="+",
+                          help="Labels to update to the changelog",
+                          )
+
     optional.add_argument("--name",
                           type=str,
                           default='CHANGES.md',
@@ -259,6 +264,8 @@ def main():
 
     changelog_pr = set()
     generator, labels = get_custom_options(repo)
+    if args.labels is not None:
+        labels = args.labels
 
     for label in labels:
         pull_requests = api.search(milestone['title'], label)
