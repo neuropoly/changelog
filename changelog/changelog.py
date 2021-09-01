@@ -222,7 +222,8 @@ def get_parser():
 
     optional.add_argument("--labels",
                           nargs="+",
-                          help="Labels to update to the changelog",
+                          help="Labels to use for grouping PRs by category (the specified labels will be used "
+                               "as headers in the changelog)"
                           )
 
     optional.add_argument("--name",
