@@ -1,4 +1,4 @@
-    #!/usr/bin/env python
+# !/usr/bin/env python
 import sys
 import io
 import os
@@ -25,7 +25,7 @@ class GithubAPI(object):
     def check_rate_limit(self):
         """
         API limits reset every hour so there is no point in spacing the requests over time
-        as the delays will make the script unuseable. Instead check monitor the requests
+        as the delays will make the script unusable. Instead check monitor the requests
         remaining and notify user accordingly.
         It is recommended to use a PAT (personal access token) as this will increase the api
         limit for some resources.
@@ -40,14 +40,17 @@ class GithubAPI(object):
         core_api = r['resources']['core']
         search_api = r['resources']['search']
 
-        logger.info(f"Core api limit={core_api['limit']} remaining={core_api['remaining']} reset={datetime.datetime.fromtimestamp(core_api['reset'])}")
-        logger.info(f"Search api limit={search_api['limit']} remaining={search_api['remaining']} reset={datetime.datetime.fromtimestamp(search_api['reset'])}")
+        logger.info(
+            f"Core api limit={core_api['limit']} remaining={core_api['remaining']} reset={datetime.datetime.fromtimestamp(core_api['reset'])}")
+        logger.info(
+            f"Search api limit={search_api['limit']} remaining={search_api['remaining']} reset={datetime.datetime.fromtimestamp(search_api['reset'])}")
 
         if core_api['remaining'] == 0:
             raise ValueError(f"Core API limit reached! Retry at {datetime.datetime.fromtimestamp(core_api['reset'])}")
 
         if search_api['remaining'] == 0:
-            raise ValueError(f"Search API limit reached! Retry at {datetime.datetime.fromtimestamp(search_api['reset'])}")
+            raise ValueError(
+                f"Search API limit reached! Retry at {datetime.datetime.fromtimestamp(search_api['reset'])}")
 
     def request(self, url, method="GET", headers=None, params=None, data=None):
         headers = headers or {}
@@ -64,10 +67,12 @@ class GithubAPI(object):
             remaining = response.headers.get('X-RateLimit-Limit')
             reset = response.headers.get('X-RateLimit-Reset')
 
-            logger.debug(f"api rate limit stats: limit={limit}, remaining={remaining}, reset={datetime.datetime.fromtimestamp(int(reset))}")
+            logger.debug(
+                f"api rate limit stats: limit={limit}, remaining={remaining}, reset={datetime.datetime.fromtimestamp(int(reset))}")
 
             if remaining == 0:
-                raise ValueError(f"API limit reached! Retry at {datetime.datetime.fromtimestamp(reset)} or use an authentication token!")
+                raise ValueError(
+                    f"API limit reached! Retry at {datetime.datetime.fromtimestamp(reset)} or use an authentication token!")
 
         return requests.request(
             method=method,
@@ -135,6 +140,7 @@ class GithubAPI(object):
         logger.info(f"Milestone: {milestone}, Label: {label}, Count: {r['total_count']}")
         return r
 
+
 def get_custom_options(repo):
     """
     If repo has customizations defined for changelog use them, otherwise use defaults.
@@ -144,6 +150,7 @@ def get_custom_options(repo):
 
     generator, labels = options[repo]['generator'], options[repo]['labels']
     return generator, labels
+
 
 def default_changelog_generator(item):
     """
@@ -159,6 +166,7 @@ def default_changelog_generator(item):
         compat_msg = ""
 
     return f" - {title}. {compat_msg} [View pull request]({pr_url})"
+
 
 def sct_changelog_generator(item):
     """
@@ -187,8 +195,8 @@ def sct_changelog_generator(item):
     else:
         return f" - {title}. {compat_msg} [View pull request]({pr_url})"
 
-def get_parser():
 
+def get_parser():
     parser = argparse.ArgumentParser(
         description="Changelog generator script",
         add_help=False,
@@ -196,27 +204,27 @@ def get_parser():
 
     mandatory = parser.add_argument_group("required arguments")
     mandatory.add_argument("repo-url",
-        help="Repository url in the format <GITHUB_USER/REPO_NAME>. Example: neuropoly/spinalcordtoolbox",
-    )
+                           help="Repository url in the format <GITHUB_USER/REPO_NAME>. Example: neuropoly/spinalcordtoolbox",
+                           )
 
     optional = parser.add_argument_group('optional arguments')
     optional.add_argument("-h", "--help", action="help", help="show this help message and exit")
 
     optional.add_argument("--log-level",
-        default="INFO",
-        help="Logging level (eg. INFO, see Python logging docs)",
-    )
+                          default="INFO",
+                          help="Logging level (eg. INFO, see Python logging docs)",
+                          )
 
     optional.add_argument("--update",
-        action='store_true',
-        help="Update an existing changelog file by prepending to it.",
-    )
+                          action='store_true',
+                          help="Update an existing changelog file by prepending to it.",
+                          )
 
     optional.add_argument("--name",
-        type=str,
-        default='CHANGES.md',
-        help="Existing changelog file to use.",
-    )
+                          type=str,
+                          default='CHANGES.md',
+                          help="Existing changelog file to use.",
+                          )
 
     optional.add_argument(
         "--milestone",
@@ -226,6 +234,7 @@ def get_parser():
     )
 
     return parser
+
 
 def main():
     parser = get_parser()
@@ -259,7 +268,7 @@ def main():
                 lines.append(f"\n**{label.upper()}**\n")
             changelog_pr = changelog_pr.union(set([x['html_url'] for x in items]))
             for x in pull_requests.get('items'):
-                items = [ generator(x) ]
+                items = [generator(x)]
                 lines.extend(items)
 
     logger.info('Total number of pull requests with label: %d', len(changelog_pr))
@@ -307,15 +316,17 @@ options = {
         'generator': default_changelog_generator,
     },
     'spinalcordtoolbox': {
-        'labels': ['feature', 'documentation-internal', 'CI', 'bug', 'installation', 'documentation', 'enhancement', 'refactoring', 'git/github'],
+        'labels': ['feature', 'documentation-internal', 'CI', 'bug', 'installation', 'documentation', 'enhancement',
+                   'refactoring', 'git/github'],
         'generator': sct_changelog_generator,
     },
     'ivadomed': {
-        'labels': ['bug', 'dependencies', 'documentation', 'enhancement'],
+        'labels': ['feature', 'CI', 'bug', 'installation', 'documentation', 'dependencies', 'enhancement',
+                   'testing', 'refactoring'],
         'generator': default_changelog_generator,
     },
     'axondeepseg': {
-        'labels': ['bug', 'enhancement', 'feature', 'documentation', 'installation', 'testing'],
+        'labels': ['feature', 'bug', 'installation', 'documentation', 'enhancement', 'testing'],
         'generator': default_changelog_generator,
     }
 }
