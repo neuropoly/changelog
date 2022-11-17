@@ -2,14 +2,7 @@
 Create a changelog file from all the merged pull requests
 
 ## Usage
-Install with pip (only do it once):
-
-### Standard install
-```
-pip install changelog-neuropoly
-```
-
-### Development install
+Development install:
 ````
 git clone git@github.com:neuropoly/changelog.git .
 cd changelog
