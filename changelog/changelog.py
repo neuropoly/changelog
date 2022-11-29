@@ -191,7 +191,7 @@ def sct_changelog_generator(item):
         compat_msg = ""
 
     if sct_labels:
-        return f" - **{','.join(label for label in sct_labels)}:** {title}. {compat_msg} [View pull request]({pr_url})"
+        return f" - **{', '.join(label for label in sct_labels)}:** {title}. {compat_msg} [View pull request]({pr_url})"
     else:
         return f" - {title}. {compat_msg} [View pull request]({pr_url})"
 
