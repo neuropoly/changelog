@@ -326,13 +326,13 @@ options = {
     'spinalcordtoolbox': {
         'labels': [
             'feature',
-            'documentation-internal',
-            'CI',
+            'enhancement',
             'bug',
             'installation',
             'documentation',
-            'enhancement',
+            'documentation-internal',
             'refactoring',
+            'CI',
             'git/github',
         ],
         'generator': sct_changelog_generator,
