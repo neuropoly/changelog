@@ -324,8 +324,17 @@ options = {
         'generator': default_changelog_generator,
     },
     'spinalcordtoolbox': {
-        'labels': ['feature', 'documentation-internal', 'CI', 'bug', 'installation', 'documentation', 'enhancement',
-                   'refactoring', 'git/github'],
+        'labels': [
+            'feature',
+            'documentation-internal',
+            'CI',
+            'bug',
+            'installation',
+            'documentation',
+            'enhancement',
+            'refactoring',
+            'git/github',
+        ],
         'generator': sct_changelog_generator,
     },
     'ivadomed': {
