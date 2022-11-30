@@ -281,17 +281,15 @@ def main():
 
     for label in labels:
         pull_requests = api.search(milestone['title'], label)
-        items = pull_requests.get('items')
+        items = pull_requests['items']
         if items:
             if label:
                 lines.append(f"\n**{label.upper()}**\n")
-            changelog_pr = changelog_pr.union(set([x['html_url'] for x in items]))
-            for x in pull_requests.get('items'):
-                items = [generator(x)]
-                lines.extend(items)
+            changelog_pr = changelog_pr.union(pr['html_url'] for pr in items)
+            lines.extend(generator(pr) for pr in items)
 
     logger.info('Total number of pull requests with label: %d', len(changelog_pr))
-    all_pr = set([x['html_url'] for x in api.search(milestone['title'])['items']])
+    all_pr = set(pr['html_url'] for pr in api.search(milestone['title'])['items'])
     diff_pr = all_pr - changelog_pr
     for diff in diff_pr:
         logger.warning('Pull request not labeled: %s', diff)
