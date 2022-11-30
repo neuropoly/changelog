@@ -1,6 +1,5 @@
 # !/usr/bin/env python
 import sys
-import io
 import os
 import logging
 import datetime
@@ -290,13 +289,13 @@ def main():
         if not os.path.exists(filename):
             raise IOError(f"The provided changelog file: {filename} does not exist!")
 
-        with io.open(filename, 'r') as f:
+        with open(filename, 'r') as f:
             original = f.readlines()
 
         backup = f"{filename}.bak"
         os.rename(filename, backup)
 
-        with io.open(filename, 'w') as changelog:
+        with open(filename, 'w') as changelog:
             # re-use first line from existing file since it most likely contains the title
             changelog.write(original[0] + '\n')
 
@@ -311,7 +310,7 @@ def main():
 
     else:
         filename = f"{user}_{repo}_changelog.{milestone['number']}.md"
-        with io.open(filename, "w") as changelog:
+        with open(filename, "w") as changelog:
             changelog.write('\n'.join(lines))
 
     logger.info(f"Changelog written into {filename}")
