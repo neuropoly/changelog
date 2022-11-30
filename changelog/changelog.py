@@ -167,18 +167,18 @@ def default_changelog_generator(item):
     return f" - {title}. {compat_msg} [View pull request]({pr_url})\n"
 
 
+def get_sct_function_from_label(labels=[]):
+    labels_list = []
+    for label in labels:
+        if "sct_" in label['name']:
+            labels_list.append(label['name'])
+    return labels_list
+
+
 def sct_changelog_generator(item):
     """
     Custom changelog line generator for sct project.
     """
-
-    def get_sct_function_from_label(labels=[]):
-        labels_list = []
-        for label in labels:
-            if "sct_" in label['name']:
-                labels_list.append(label['name'])
-        return labels_list
-
     title = item['title']
     sct_labels = get_sct_function_from_label(item['labels'])
     breaks_compat = 'compatibility' in item['labels']
