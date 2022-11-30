@@ -304,6 +304,7 @@ def main():
 
         backup = f"{filename}.bak"
         os.rename(filename, backup)
+        logger.info(f"Backup created: {backup}")
 
         with open(filename, 'w') as changelog:
             # re-use first line from existing file since it most likely contains the title
@@ -315,8 +316,6 @@ def main():
 
             # write back rest of changelog
             changelog.writelines(original[1:])
-
-        logger.info(f"Backup created: {backup}")
 
     else:
         filename = f"{user}_{repo}_changelog.{milestone['number']}.md"
