@@ -151,20 +151,23 @@ def get_custom_options(repo):
     return generator, labels
 
 
-def default_changelog_generator(item):
+def default_changelog_generator(items):
     """
     Contruct the default changelog line for a given item (PR).
     """
-    title = item['title']
-    breaks_compat = 'compatibility' in item['labels']
-    pr_url = item['html_url']
+    lines = []
+    for item in items:
+        title = item['title']
+        breaks_compat = 'compatibility' in item['labels']
+        pr_url = item['html_url']
 
-    if breaks_compat:
-        compat_msg = "**WARNING: Breaks compatibility with previous version.**"
-    else:
-        compat_msg = ""
+        if breaks_compat:
+            compat_msg = "**WARNING: Breaks compatibility with previous version.**"
+        else:
+            compat_msg = ""
 
-    return f" - {title}. {compat_msg} [View pull request]({pr_url})\n"
+        lines.append(f" - {title}. {compat_msg} [View pull request]({pr_url})\n")
+    return lines
 
 
 def get_sct_function_from_label(labels=[]):
@@ -175,24 +178,27 @@ def get_sct_function_from_label(labels=[]):
     return labels_list
 
 
-def sct_changelog_generator(item):
+def sct_changelog_generator(items):
     """
     Custom changelog line generator for sct project.
     """
-    title = item['title']
-    sct_labels = get_sct_function_from_label(item['labels'])
-    breaks_compat = 'compatibility' in item['labels']
-    pr_url = item['html_url']
+    lines = []
+    for item in items:
+        title = item['title']
+        sct_labels = get_sct_function_from_label(item['labels'])
+        breaks_compat = 'compatibility' in item['labels']
+        pr_url = item['html_url']
 
-    if breaks_compat:
-        compat_msg = "**WARNING: Breaks compatibility with previous version.**"
-    else:
-        compat_msg = ""
+        if breaks_compat:
+            compat_msg = "**WARNING: Breaks compatibility with previous version.**"
+        else:
+            compat_msg = ""
 
-    if sct_labels:
-        return f" - **{', '.join(label for label in sct_labels)}:** {title}. {compat_msg} [View pull request]({pr_url})\n"
-    else:
-        return f" - {title}. {compat_msg} [View pull request]({pr_url})\n"
+        if sct_labels:
+            lines.append(f" - **{', '.join(label for label in sct_labels)}:** {title}. {compat_msg} [View pull request]({pr_url})\n")
+        else:
+            lines.append(f" - {title}. {compat_msg} [View pull request]({pr_url})\n")
+    return lines
 
 
 def get_parser():
@@ -289,7 +295,7 @@ def main():
                     f"**{label.upper()}**\n",
                 ])
             changelog_pr = changelog_pr.union(pr['html_url'] for pr in items)
-            lines.extend(generator(pr) for pr in items)
+            lines.extend(generator(items))
 
     logger.info('Total number of pull requests with label: %d', len(changelog_pr))
     all_pr = set(pr['html_url'] for pr in api.search(milestone['title'])['items'])
