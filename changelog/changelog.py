@@ -98,7 +98,7 @@ class GithubAPI(object):
         Get info about the most recently updated milestone.
         """
         open_milestones = self.fetch_open_milestones()
-        milestone = sorted(open_milestones, key=lambda m: m['updated_at'])[-1]
+        milestone = max(open_milestones, key=lambda m: m['updated_at'])
         logger.info(f"Using most recently updated milestone: '{milestone['title']}'")
         return milestone
 
