@@ -133,7 +133,7 @@ class GithubAPI(object):
         if label:
             query += f' label:{label}'
         else:
-            query += f' no:label'
+            query += ' no:label'
         payload = {'q': query}
         r = self.request(url=url, params=payload).json()
         logger.info(f"Milestone: {milestone}, Label: {label}, Count: {r['total_count']}")
@@ -144,7 +144,7 @@ def get_custom_options(repo):
     """
     If repo has customizations defined for changelog use them, otherwise use defaults.
     """
-    if not repo in options:
+    if repo not in options:
         repo = 'default'
 
     generator, labels = options[repo]['generator'], options[repo]['labels']
