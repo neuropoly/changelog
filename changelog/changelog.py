@@ -164,7 +164,7 @@ def default_changelog_generator(item):
     else:
         compat_msg = ""
 
-    return f" - {title}. {compat_msg} [View pull request]({pr_url})"
+    return f" - {title}. {compat_msg} [View pull request]({pr_url})\n"
 
 
 def sct_changelog_generator(item):
@@ -190,9 +190,9 @@ def sct_changelog_generator(item):
         compat_msg = ""
 
     if sct_labels:
-        return f" - **{', '.join(label for label in sct_labels)}:** {title}. {compat_msg} [View pull request]({pr_url})"
+        return f" - **{', '.join(label for label in sct_labels)}:** {title}. {compat_msg} [View pull request]({pr_url})\n"
     else:
-        return f" - {title}. {compat_msg} [View pull request]({pr_url})"
+        return f" - {title}. {compat_msg} [View pull request]({pr_url})\n"
 
 
 def get_parser():
@@ -270,8 +270,8 @@ def main():
         date = datetime.date.today()
 
     lines = [
-        f"## {tag} ({date})",
-        f"[View detailed changelog]({api.get_tags_compare_url(tag)})"
+        f"## {tag} ({date})\n",
+        f"[View detailed changelog]({api.get_tags_compare_url(tag)})\n",
     ]
 
     changelog_pr = set()
@@ -284,7 +284,10 @@ def main():
         items = pull_requests['items']
         if items:
             if label:
-                lines.append(f"\n**{label.upper()}**\n")
+                lines.extend([
+                    "\n",
+                    f"**{label.upper()}**\n",
+                ])
             changelog_pr = changelog_pr.union(pr['html_url'] for pr in items)
             lines.extend(generator(pr) for pr in items)
 
@@ -308,11 +311,10 @@ def main():
 
         with open(filename, 'w') as changelog:
             # re-use first line from existing file since it most likely contains the title
-            changelog.write(original[0] + '\n')
+            changelog.writelines(original[:1] + ["\n"])
 
             # write current changelog
-            changelog.write('\n'.join(lines))
-            changelog.write('\n')
+            changelog.writelines(lines)
 
             # write back rest of changelog
             changelog.writelines(original[1:])
@@ -320,7 +322,7 @@ def main():
     else:
         filename = f"{user}_{repo}_changelog.{milestone['number']}.md"
         with open(filename, "w") as changelog:
-            changelog.write('\n'.join(lines))
+            changelog.writelines(lines)
 
     logger.info(f"Changelog written into {filename}")
 
