@@ -238,6 +238,12 @@ def get_parser():
              "used instead."
     )
 
+    optional.add_argument(
+        "--use-milestone-due-date",
+        action='store_true',
+        help="Use the milestone due date as the release date, instead of today.",
+    )
+
     return parser
 
 
@@ -257,8 +263,14 @@ def main():
         milestone = api.get_most_recently_updated_milestone()
     tag = milestone['title'].split()[-1]
 
+    if args.use_milestone_due_date:
+        due_on = milestone['due_on'].replace('Z', '+00:00')
+        date = datetime.datetime.fromisoformat(due_on).date()
+    else:
+        date = datetime.date.today()
+
     lines = [
-        f"## {tag} ({datetime.date.today()})",
+        f"## {tag} ({date})",
         f"[View detailed changelog]({api.get_tags_compare_url(tag)})"
     ]
 
