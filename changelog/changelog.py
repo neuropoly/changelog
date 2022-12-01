@@ -177,9 +177,10 @@ def sct_changelog_generator(items):
     lines = []
     for item in items:
         title = item['title']
-        sct_labels = [l['name'] for l in item['labels'] if "sct_" in l['name']]
+        sct_labels = sorted(l['name'] for l in item['labels'] if "sct_" in l['name'])
         breaks_compat = any(l['name'] == 'compatibility' for l in item['labels'])
         pr_url = item['html_url']
+        sorting_key = (sct_labels, item['number'])
 
         if breaks_compat:
             compat_msg = "**WARNING: Breaks compatibility with previous version.**"
@@ -187,10 +188,13 @@ def sct_changelog_generator(items):
             compat_msg = ""
 
         if sct_labels:
-            lines.append(f" - **{', '.join(label for label in sct_labels)}:** {title}. {compat_msg} [View pull request]({pr_url})\n")
+            labels_msg = f"**{', '.join(l for l in sct_labels)}**: "
         else:
-            lines.append(f" - {title}. {compat_msg} [View pull request]({pr_url})\n")
-    return lines
+            labels_msg = ""
+
+        line = f" - {labels_msg}{title}. {compat_msg} [View pull request]({pr_url})\n"
+        lines.append((sorting_key, line))
+    return [line for (key, line) in sorted(lines)]
 
 
 def get_parser():
