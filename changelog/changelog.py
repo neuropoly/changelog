@@ -158,7 +158,7 @@ def default_changelog_generator(items):
     lines = []
     for item in items:
         title = item['title']
-        breaks_compat = 'compatibility' in item['labels']
+        breaks_compat = any(l['name'] == 'compatibility' for l in item['labels'])
         pr_url = item['html_url']
 
         if breaks_compat:
@@ -178,7 +178,7 @@ def sct_changelog_generator(items):
     for item in items:
         title = item['title']
         sct_labels = [l['name'] for l in item['labels'] if "sct_" in l['name']]
-        breaks_compat = 'compatibility' in item['labels']
+        breaks_compat = any(l['name'] == 'compatibility' for l in item['labels'])
         pr_url = item['html_url']
 
         if breaks_compat:
