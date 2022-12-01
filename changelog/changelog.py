@@ -162,11 +162,11 @@ def default_changelog_generator(items):
         pr_url = item['html_url']
 
         if breaks_compat:
-            compat_msg = "**WARNING: Breaks compatibility with previous version.**"
+            compat_msg = "**WARNING: Breaks compatibility with previous version.** "
         else:
             compat_msg = ""
 
-        lines.append(f" - {title}. {compat_msg} [View pull request]({pr_url})\n")
+        lines.append(f" - {title}. {compat_msg}[View pull request]({pr_url})\n")
     return lines
 
 
@@ -183,7 +183,7 @@ def sct_changelog_generator(items):
         sorting_key = (sct_labels, item['number'])
 
         if breaks_compat:
-            compat_msg = "**WARNING: Breaks compatibility with previous version.**"
+            compat_msg = "**WARNING: Breaks compatibility with previous version.** "
         else:
             compat_msg = ""
 
@@ -192,7 +192,7 @@ def sct_changelog_generator(items):
         else:
             labels_msg = ""
 
-        line = f" - {labels_msg}{title}. {compat_msg} [View pull request]({pr_url})\n"
+        line = f" - {labels_msg}{title}. {compat_msg}[View pull request]({pr_url})\n"
         lines.append((sorting_key, line))
     return [line for (key, line) in sorted(lines)]
 
