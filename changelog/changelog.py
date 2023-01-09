@@ -351,12 +351,28 @@ options = {
         'generator': sct_changelog_generator,
     },
     'ivadomed': {
-        'labels': ['feature', 'CI', 'bug', 'installation', 'documentation', 'dependencies', 'enhancement',
-                   'testing', 'refactoring'],
+        'labels': [
+            'feature',
+            'CI',
+            'bug',
+            'installation',
+            'documentation',
+            'dependencies',
+            'enhancement',
+            'testing',
+            'refactoring',
+        ],
         'generator': default_changelog_generator,
     },
     'axondeepseg': {
-        'labels': ['feature', 'bug', 'installation', 'documentation', 'enhancement', 'testing'],
+        'labels': [
+            'feature',
+            'bug',
+            'installation',
+            'documentation',
+            'enhancement',
+            'testing',
+        ],
         'generator': default_changelog_generator,
     }
 }
