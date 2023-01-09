@@ -1,6 +1,5 @@
 # !/usr/bin/env python
 import sys
-import io
 import os
 import logging
 import datetime
@@ -99,7 +98,7 @@ class GithubAPI(object):
         Get info about the most recently updated milestone.
         """
         open_milestones = self.fetch_open_milestones()
-        milestone = sorted(open_milestones, key=lambda m: m['updated_at'])[-1]
+        milestone = max(open_milestones, key=lambda m: m['updated_at'])
         logger.info(f"Using most recently updated milestone: '{milestone['title']}'")
         return milestone
 
@@ -134,7 +133,7 @@ class GithubAPI(object):
         if label:
             query += f' label:{label}'
         else:
-            query += f' no:label'
+            query += ' no:label'
         payload = {'q': query}
         r = self.request(url=url, params=payload).json()
         logger.info(f"Milestone: {milestone}, Label: {label}, Count: {r['total_count']}")
@@ -145,55 +144,58 @@ def get_custom_options(repo):
     """
     If repo has customizations defined for changelog use them, otherwise use defaults.
     """
-    if not repo in options:
+    if repo not in options:
         repo = 'default'
 
     generator, labels = options[repo]['generator'], options[repo]['labels']
     return generator, labels
 
 
-def default_changelog_generator(item):
+def default_changelog_generator(items):
     """
     Contruct the default changelog line for a given item (PR).
     """
-    title = item['title']
-    breaks_compat = 'compatibility' in item['labels']
-    pr_url = item['html_url']
+    lines = []
+    for item in items:
+        title = item['title']
+        breaks_compat = any(l['name'] == 'compatibility' for l in item['labels'])
+        pr_url = item['html_url']
 
-    if breaks_compat:
-        compat_msg = "**WARNING: Breaks compatibility with previous version.**"
-    else:
-        compat_msg = ""
+        if breaks_compat:
+            compat_msg = "**WARNING: Breaks compatibility with previous version.** "
+        else:
+            compat_msg = ""
 
-    return f" - {title}. {compat_msg} [View pull request]({pr_url})"
+        lines.append(f" - {title}. {compat_msg}[View pull request]({pr_url})\n")
+    return lines
 
 
-def sct_changelog_generator(item):
+def sct_changelog_generator(items):
     """
     Custom changelog line generator for sct project.
     """
+    lines = []
+    for item in items:
+        title = item['title']
+        sct_labels = sorted(l['name'] for l in item['labels'] if "sct_" in l['name'])
+        breaks_compat = any(l['name'] == 'compatibility' for l in item['labels'])
+        pr_url = item['html_url']
 
-    def get_sct_function_from_label(labels=[]):
-        labels_list = []
-        for label in labels:
-            if "sct_" in label['name']:
-                labels_list.append(label['name'])
-        return labels_list
+        if breaks_compat:
+            compat_msg = "**WARNING: Breaks compatibility with previous version.** "
+        else:
+            compat_msg = ""
 
-    title = item['title']
-    sct_labels = get_sct_function_from_label(item['labels'])
-    breaks_compat = 'compatibility' in item['labels']
-    pr_url = item['html_url']
+        if sct_labels:
+            labels_msg = f"**{', '.join(l for l in sct_labels)}**: "
+        else:
+            labels_msg = ""
 
-    if breaks_compat:
-        compat_msg = "**WARNING: Breaks compatibility with previous version.**"
-    else:
-        compat_msg = ""
-
-    if sct_labels:
-        return f" - **{','.join(label for label in sct_labels)}:** {title}. {compat_msg} [View pull request]({pr_url})"
-    else:
-        return f" - {title}. {compat_msg} [View pull request]({pr_url})"
+        line = f" - {labels_msg}{title}. {compat_msg}[View pull request]({pr_url})\n"
+        # Sorting precedence: 1. PR labels > 2. PR number > 3. Line contents
+        # NB: CLI PRs (`sct_function`) are ordered before API PRs (denoted using 'x')
+        lines.append((sct_labels if sct_labels else ['x'], item['number'], line))
+    return [line for (pr_labels, pr_number, line) in sorted(lines)]
 
 
 def get_parser():
@@ -239,6 +241,12 @@ def get_parser():
              "used instead."
     )
 
+    optional.add_argument(
+        "--use-milestone-due-date",
+        action='store_true',
+        help="Use the milestone due date as the release date, instead of today.",
+    )
+
     return parser
 
 
@@ -258,9 +266,15 @@ def main():
         milestone = api.get_most_recently_updated_milestone()
     tag = milestone['title'].split()[-1]
 
+    if args.use_milestone_due_date:
+        due_on = milestone['due_on'].replace('Z', '+00:00')
+        date = datetime.datetime.fromisoformat(due_on).date()
+    else:
+        date = datetime.date.today()
+
     lines = [
-        f"## {tag} ({datetime.date.today()})",
-        f"[View detailed changelog]({api.get_tags_compare_url(tag)})"
+        f"## {tag} ({date})\n",
+        f"[View detailed changelog]({api.get_tags_compare_url(tag)})\n",
     ]
 
     changelog_pr = set()
@@ -270,17 +284,18 @@ def main():
 
     for label in labels:
         pull_requests = api.search(milestone['title'], label)
-        items = pull_requests.get('items')
+        items = pull_requests['items']
         if items:
             if label:
-                lines.append(f"\n**{label.upper()}**\n")
-            changelog_pr = changelog_pr.union(set([x['html_url'] for x in items]))
-            for x in pull_requests.get('items'):
-                items = [generator(x)]
-                lines.extend(items)
+                lines.extend([
+                    "\n",
+                    f"**{label.upper()}**\n",
+                ])
+            changelog_pr = changelog_pr.union(pr['html_url'] for pr in items)
+            lines.extend(generator(items))
 
     logger.info('Total number of pull requests with label: %d', len(changelog_pr))
-    all_pr = set([x['html_url'] for x in api.search(milestone['title'])['items']])
+    all_pr = set(pr['html_url'] for pr in api.search(milestone['title'])['items'])
     diff_pr = all_pr - changelog_pr
     for diff in diff_pr:
         logger.warning('Pull request not labeled: %s', diff)
@@ -290,29 +305,27 @@ def main():
         if not os.path.exists(filename):
             raise IOError(f"The provided changelog file: {filename} does not exist!")
 
-        with io.open(filename, 'r') as f:
+        with open(filename, 'r') as f:
             original = f.readlines()
 
         backup = f"{filename}.bak"
         os.rename(filename, backup)
+        logger.info(f"Backup created: {backup}")
 
-        with io.open(filename, 'w') as changelog:
+        with open(filename, 'w') as changelog:
             # re-use first line from existing file since it most likely contains the title
-            changelog.write(original[0] + '\n')
+            changelog.writelines(original[:1] + ["\n"])
 
             # write current changelog
-            changelog.write('\n'.join(lines))
-            changelog.write('\n')
+            changelog.writelines(lines)
 
             # write back rest of changelog
             changelog.writelines(original[1:])
 
-        logger.info(f"Backup created: {backup}")
-
     else:
         filename = f"{user}_{repo}_changelog.{milestone['number']}.md"
-        with io.open(filename, "w") as changelog:
-            changelog.write('\n'.join(lines))
+        with open(filename, "w") as changelog:
+            changelog.writelines(lines)
 
     logger.info(f"Changelog written into {filename}")
 
@@ -324,17 +337,42 @@ options = {
         'generator': default_changelog_generator,
     },
     'spinalcordtoolbox': {
-        'labels': ['feature', 'documentation-internal', 'CI', 'bug', 'installation', 'documentation', 'enhancement',
-                   'refactoring', 'git/github'],
+        'labels': [
+            'feature',
+            'enhancement',
+            'bug',
+            'installation',
+            'documentation',
+            'documentation-internal',
+            'refactoring',
+            'CI',
+            'git/github',
+        ],
         'generator': sct_changelog_generator,
     },
     'ivadomed': {
-        'labels': ['feature', 'CI', 'bug', 'installation', 'documentation', 'dependencies', 'enhancement',
-                   'testing', 'refactoring'],
+        'labels': [
+            'feature',
+            'CI',
+            'bug',
+            'installation',
+            'documentation',
+            'dependencies',
+            'enhancement',
+            'testing',
+            'refactoring',
+        ],
         'generator': default_changelog_generator,
     },
     'axondeepseg': {
-        'labels': ['feature', 'bug', 'installation', 'documentation', 'enhancement', 'testing'],
+        'labels': [
+            'feature',
+            'bug',
+            'installation',
+            'documentation',
+            'enhancement',
+            'testing',
+        ],
         'generator': default_changelog_generator,
     }
 }
