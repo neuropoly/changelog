@@ -180,7 +180,6 @@ def sct_changelog_generator(items):
         sct_labels = sorted(l['name'] for l in item['labels'] if "sct_" in l['name'])
         breaks_compat = any(l['name'] == 'compatibility' for l in item['labels'])
         pr_url = item['html_url']
-        sorting_key = (sct_labels, item['number'])
 
         if breaks_compat:
             compat_msg = "**WARNING: Breaks compatibility with previous version.** "
@@ -193,8 +192,10 @@ def sct_changelog_generator(items):
             labels_msg = ""
 
         line = f" - {labels_msg}{title}. {compat_msg}[View pull request]({pr_url})\n"
-        lines.append((sorting_key, line))
-    return [line for (key, line) in sorted(lines)]
+        # Sorting precedence: 1. PR labels > 2. PR number > 3. Line contents
+        # NB: CLI PRs (`sct_function`) are ordered before API PRs (denoted using 'x')
+        lines.append((sct_labels if sct_labels else ['x'], item['number'], line))
+    return [line for (pr_labels, pr_number, line) in sorted(lines)]
 
 
 def get_parser():
