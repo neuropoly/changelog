@@ -131,7 +131,7 @@ class GithubAPI(object):
         url = f"{self.api_url_prefix}/search/issues"
         query = f'milestone:"{milestone}" is:pr repo:{self.repo_url} state:closed is:merged'
         if label:
-            query += f' label:{label}'
+            query += f' label:"{label}"'
         else:
             query += ' no:label'
         payload = {'q': query}
@@ -196,6 +196,33 @@ def sct_changelog_generator(items):
         # NB: CLI PRs (`sct_function`) are ordered before API PRs (denoted using 'x')
         lines.append((sct_labels if sct_labels else ['x'], item['number'], line))
     return [line for (pr_labels, pr_number, line) in sorted(lines)]
+
+
+def st_changelog_generator(items):
+    """
+    Contruct the Shimming Toolbox changelog line for a given item (PRs).
+    """
+
+    lines = []
+    label_sorted_items = {}
+    for item in items:
+        for label in item['labels']:
+            label_name = label['name']
+            if label_name in options['shimming-toolbox']['sublabels']:
+                if label_name not in label_sorted_items.keys():
+                    label_sorted_items[label_name] = [item]
+                else:
+                    label_sorted_items[label_name].append(item)
+
+    changelog_pr = set()
+    for label_used in label_sorted_items.keys():
+        lines.extend([
+            "\n",
+            f"**{label_used.upper()}**\n",
+        ])
+        lines.extend(default_changelog_generator(label_sorted_items[label_used]))
+        changelog_pr = changelog_pr.union(pr['html_url'] for pr in label_sorted_items[label_used])
+    return lines, changelog_pr
 
 
 def get_parser():
@@ -282,17 +309,32 @@ def main():
     if args.labels is not None:
         labels = args.labels
 
-    for label in labels:
-        pull_requests = api.search(milestone['title'], label)
-        items = pull_requests['items']
-        if items:
-            if label:
-                lines.extend([
-                    "\n",
-                    f"**{label.upper()}**\n",
-                ])
-            changelog_pr = changelog_pr.union(pr['html_url'] for pr in items)
-            lines.extend(generator(items))
+    if repo == 'shimming-toolbox':
+        for label in labels:
+            pull_requests = api.search(milestone['title'], label)
+            items = pull_requests['items']
+            if items:
+                if label:
+                    lines.extend([
+                        "\n",
+                        f"### {label.upper()}\n",
+                    ])
+
+                    some_lines, some_changelog_pr = generator(items)
+                    lines.extend(some_lines)
+                    changelog_pr = changelog_pr.union(some_changelog_pr)
+    else:
+        for label in labels:
+            pull_requests = api.search(milestone['title'], label)
+            items = pull_requests['items']
+            if items:
+                if label:
+                    lines.extend([
+                        "\n",
+                        f"**{label.upper()}**\n",
+                    ])
+                changelog_pr = changelog_pr.union(pr['html_url'] for pr in items)
+                lines.extend(generator(items))
 
     logger.info('Total number of pull requests with label: %d', len(changelog_pr))
     all_pr = set(pr['html_url'] for pr in api.search(milestone['title'])['items'])
@@ -374,6 +416,22 @@ options = {
             'testing',
         ],
         'generator': default_changelog_generator,
+    },
+    'shimming-toolbox': {
+        'sublabels': [
+            'feature',
+            'bug',
+            'installation',
+            'documentation',
+            'enhancement',
+            'testing',
+        ],
+        'labels': [
+            'Repo',
+            'Package: Plugin',
+            'Package: Shimming Toolbox'
+        ],
+        'generator': st_changelog_generator,
     }
 }
 
