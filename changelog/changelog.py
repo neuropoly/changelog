@@ -134,8 +134,24 @@ class GithubAPI(object):
             query += f' label:"{label}"'
         else:
             query += ' no:label'
-        payload = {'q': query}
-        r = self.request(url=url, params=payload).json()
+
+        payload = {'q': query,
+                   'per_page': 100,
+                   'page': 0}
+
+        r = {'items': []}
+
+        received_items = 0
+        total_count = 1
+        while received_items < total_count:
+            payload['page'] += 1
+            r_temp = self.request(url=url, params=payload).json()
+            total_count = r_temp['total_count']
+            received_items += len(r_temp['items'])
+            r['items'].extend(r_temp['items'])
+            r['total_count'] = r_temp['total_count']
+            r['incomplete_results'] = r_temp.get('incomplete_results')
+
         logger.info(f"Milestone: {milestone}, Label: {label}, Count: {r['total_count']}")
         return r
 
