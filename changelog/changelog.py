@@ -216,7 +216,7 @@ def sct_changelog_generator(items):
 
 def st_changelog_generator(items):
     """
-    Contruct the Shimming Toolbox changelog line for a given item (PRs).
+    Contruct the Shimming Toolbox changelog for the given items (PRs).
     """
 
     lines = []
@@ -236,9 +236,37 @@ def st_changelog_generator(items):
             "\n",
             f"**{label_used.upper()}**\n",
         ])
-        lines.extend(default_changelog_generator(label_sorted_items[label_used]))
+        lines.extend(st_line_changelog_generator(label_sorted_items[label_used]))
         changelog_pr = changelog_pr.union(pr['html_url'] for pr in label_sorted_items[label_used])
     return lines, changelog_pr
+
+
+def st_line_changelog_generator(items):
+    """
+    Custom changelog line generator for ST project.
+    """
+    lines = []
+    for item in items:
+        title = item['title']
+        st_labels = sorted(l['name'] for l in item['labels'] if "st_" in l['name'])
+        breaks_compat = any(l['name'] == 'compatibility' for l in item['labels'])
+        pr_url = item['html_url']
+
+        if breaks_compat:
+            compat_msg = "**WARNING: Breaks compatibility with previous version.** "
+        else:
+            compat_msg = ""
+
+        if st_labels:
+            labels_msg = f"**{', '.join(l for l in st_labels)}**: "
+        else:
+            labels_msg = ""
+
+        line = f" - {labels_msg}{title}. {compat_msg}[View pull request]({pr_url})\n"
+        # Sorting precedence: 1. PR labels > 2. PR number > 3. Line contents
+        # NB: CLI PRs (`st_function`) are ordered before API PRs (denoted using 'x')
+        lines.append((st_labels if st_labels else ['x'], item['number'], line))
+    return [line for (pr_labels, pr_number, line) in sorted(lines)]
 
 
 def get_parser():
@@ -441,6 +469,7 @@ options = {
             'documentation',
             'enhancement',
             'testing',
+            'refactoring',
         ],
         'labels': [
             'Repo',
