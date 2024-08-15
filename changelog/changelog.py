@@ -354,19 +354,21 @@ def main():
         labels = args.labels
 
     if repo == 'shimming-toolbox':
-        for label in labels:
-            pull_requests = api.search(milestone['title'], label)
+        packages = labels
+        for package in packages:
+            pull_requests = api.search(milestone['title'], package)
             items = pull_requests['items']
             if items:
-                if label:
+                # If a single Package is given as an input, don't add H3
+                if package and len(packages) >= 2:
                     lines.extend([
                         "\n",
-                        f"### {label.upper()}\n",
+                        f"### {package.upper()}\n",
                     ])
 
-                    some_lines, some_changelog_pr = generator(items)
-                    lines.extend(some_lines)
-                    changelog_pr = changelog_pr.union(some_changelog_pr)
+                some_lines, some_changelog_pr = generator(items)
+                lines.extend(some_lines)
+                changelog_pr = changelog_pr.union(some_changelog_pr)
     else:
         for label in labels:
             pull_requests = api.search(milestone['title'], label)
@@ -472,12 +474,12 @@ options = {
             'refactoring',
         ],
         'labels': [
-            'Repo',
+            'Package: Shimming Toolbox',
             'Package: Plugin',
-            'Package: Shimming Toolbox'
+            'Repo',
         ],
         'generator': st_changelog_generator,
-    }
+    },
 }
 
 if __name__ == '__main__':
