@@ -87,7 +87,7 @@ class GithubAPI(object):
         Fetch list of milestone dicts. Each dict contains metadata about an open milestone.
         """
         url = f"{self.api_url_prefix}/repos/{self.repo_url}/milestones"
-        open_milestones = self.request(url).json()
+        open_milestones = self.request(url, params={"per_page": 100}).json()
         if not open_milestones:
             raise ValueError("No open milestone was found on github.")
         logger.debug(f"Open milestones found: {open_milestones}")
@@ -163,8 +163,8 @@ def get_custom_options(repo):
     if repo not in options:
         repo = 'default'
 
-    generator, labels = options[repo]['generator'], options[repo]['labels']
-    return generator, labels
+    generator, labels, header_labels = options[repo]['generator'], options[repo]['labels'], options[repo].get('header_labels')
+    return generator, labels, header_labels
 
 
 def default_changelog_generator(items):
@@ -184,6 +184,33 @@ def default_changelog_generator(items):
 
         lines.append(f" - {title}. {compat_msg}[View pull request]({pr_url})\n")
     return lines
+
+
+def default_header_changelog_generator(items, labels, line_generator):
+    """
+    Contruct the default changelog for the header labels.
+    """
+
+    lines = []
+    label_sorted_items = {}
+    for item in items:
+        for label in item['labels']:
+            label_name = label['name']
+            if label_name in labels:
+                if label_name not in label_sorted_items.keys():
+                    label_sorted_items[label_name] = [item]
+                else:
+                    label_sorted_items[label_name].append(item)
+
+    changelog_pr = set()
+    for label_used in label_sorted_items.keys():
+        lines.extend([
+            "\n",
+            f"**{label_used.upper()}**\n",
+        ])
+        lines.extend(line_generator(label_sorted_items[label_used]))
+        changelog_pr = changelog_pr.union(pr['html_url'] for pr in label_sorted_items[label_used])
+    return lines, changelog_pr
 
 
 def sct_changelog_generator(items):
@@ -215,33 +242,6 @@ def sct_changelog_generator(items):
 
 
 def st_changelog_generator(items):
-    """
-    Contruct the Shimming Toolbox changelog for the given items (PRs).
-    """
-
-    lines = []
-    label_sorted_items = {}
-    for item in items:
-        for label in item['labels']:
-            label_name = label['name']
-            if label_name in options['shimming-toolbox']['sublabels']:
-                if label_name not in label_sorted_items.keys():
-                    label_sorted_items[label_name] = [item]
-                else:
-                    label_sorted_items[label_name].append(item)
-
-    changelog_pr = set()
-    for label_used in label_sorted_items.keys():
-        lines.extend([
-            "\n",
-            f"**{label_used.upper()}**\n",
-        ])
-        lines.extend(st_line_changelog_generator(label_sorted_items[label_used]))
-        changelog_pr = changelog_pr.union(pr['html_url'] for pr in label_sorted_items[label_used])
-    return lines, changelog_pr
-
-
-def st_line_changelog_generator(items):
     """
     Custom changelog line generator for ST project.
     """
@@ -299,6 +299,14 @@ def get_parser():
                                "as headers in the changelog)"
                           )
 
+    optional.add_argument("--header-labels",
+                          nargs="*",
+                          help="Labels to use for grouping PRs into sections which will be subdivided "
+                               "by categories using '--labels'. (the specified '--header-labels' will be used "
+                               "as headers in the changelog unless only one is provided). When using this tag, "
+                               "only PRs with both '--header-labels' AND '--labels' will be populated"
+                          )
+
     optional.add_argument("--name",
                           type=str,
                           default='CHANGES.md',
@@ -349,24 +357,27 @@ def main():
     ]
 
     changelog_pr = set()
-    generator, labels = get_custom_options(repo)
+    generator, labels, header_labels = get_custom_options(repo)
     if args.labels is not None:
         labels = args.labels
+    if args.header_labels is not None:
+        header_labels = args.header_labels
+    if header_labels is None:
+        header_labels = []
 
-    if repo == 'shimming-toolbox':
-        packages = labels
-        for package in packages:
-            pull_requests = api.search(milestone['title'], package)
+    if header_labels:
+        for header_label in header_labels:
+            pull_requests = api.search(milestone['title'], header_label)
             items = pull_requests['items']
             if items:
-                # If a single Package is given as an input, don't add H3
-                if package and len(packages) >= 2:
+                # If a single header is given as an input, don't add H3
+                if header_label and len(header_labels) >= 2:
                     lines.extend([
                         "\n",
-                        f"### {package.upper()}\n",
+                        f"### {header_label.upper()}\n",
                     ])
 
-                some_lines, some_changelog_pr = generator(items)
+                some_lines, some_changelog_pr = default_header_changelog_generator(items, labels, generator)
                 lines.extend(some_lines)
                 changelog_pr = changelog_pr.union(some_changelog_pr)
     else:
@@ -464,7 +475,7 @@ options = {
         'generator': default_changelog_generator,
     },
     'shimming-toolbox': {
-        'sublabels': [
+        'labels': [
             'feature',
             'bug',
             'installation',
@@ -473,7 +484,7 @@ options = {
             'testing',
             'refactoring',
         ],
-        'labels': [
+        'header_labels': [
             'Package: Shimming Toolbox',
             'Package: Plugin',
             'Repo',
