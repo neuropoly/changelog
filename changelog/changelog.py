@@ -197,10 +197,7 @@ def default_header_changelog_generator(items, labels, line_generator):
         for label in item['labels']:
             label_name = label['name']
             if label_name in labels:
-                if label_name not in label_sorted_items.keys():
-                    label_sorted_items[label_name] = [item]
-                else:
-                    label_sorted_items[label_name].append(item)
+                label_sorted_items.setdefault(label_name, []).append(item)
 
     changelog_pr = set()
     for label_used in label_sorted_items.keys():
@@ -300,7 +297,7 @@ def get_parser():
                           )
 
     optional.add_argument("--header-labels",
-                          nargs="*",
+                          nargs="+",
                           help="Labels to use for grouping PRs into sections which will be subdivided "
                                "by categories using '--labels'. (the specified '--header-labels' will be used "
                                "as headers in the changelog unless only one is provided). When using this tag, "
@@ -379,7 +376,7 @@ def main():
 
                 some_lines, some_changelog_pr = default_header_changelog_generator(items, labels, generator)
                 lines.extend(some_lines)
-                changelog_pr = changelog_pr.union(some_changelog_pr)
+                changelog_pr.update(some_changelog_pr)
     else:
         for label in labels:
             pull_requests = api.search(milestone['title'], label)
@@ -390,7 +387,7 @@ def main():
                         "\n",
                         f"**{label.upper()}**\n",
                     ])
-                changelog_pr = changelog_pr.union(pr['html_url'] for pr in items)
+                changelog_pr.update(pr['html_url'] for pr in items)
                 lines.extend(generator(items))
 
     logger.info('Total number of pull requests with label: %d', len(changelog_pr))
