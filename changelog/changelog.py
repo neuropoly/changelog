@@ -4,10 +4,15 @@ import os
 import logging
 import datetime
 import argparse
+import re
 
 import requests
 
 logger = logging.getLogger(__name__)
+
+
+# regular expression for the "next page" link in Github search results
+RE_NEXT_LINK = re.compile(r'<(\S*)>; rel="next"', re.IGNORECASE)
 
 
 class GithubAPI(object):
@@ -137,20 +142,21 @@ class GithubAPI(object):
             ('is', 'merged'),
             ('no', 'label') if label is None else ('label', label),
         ])
-
         payload = {'q': query,
                    'per_page': 100,
                    'page': 0}
 
         items = []
-        total_count = 1
-        while len(items) < total_count:
-            payload['page'] += 1
-            response = self.request(url=url, params=payload).json()
-            total_count = response['total_count']
-            items.extend(response['items'])
+        response = self.request(url=url, params=payload)
+        while True:
+            items.append(response.json()['items'])
+            next_link = RE_NEXT_LINK.search(response.headers.get('link', ''))
+            if next_link:
+                response = self.request(url=next_link[1])
+            else:
+                break
 
-        logger.info(f"Milestone: {milestone}, Label: {label}, Count: {total_count}")
+        logger.info(f"Milestone: {milestone}, Label: {label}, Count: {len(items)}")
         return items
 
 
