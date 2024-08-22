@@ -149,7 +149,7 @@ class GithubAPI(object):
         items = []
         response = self.request(url=url, params=payload)
         while True:
-            items.append(response.json()['items'])
+            items.extend(response.json()['items'])
             next_link = RE_NEXT_LINK.search(response.headers.get('link', ''))
             if next_link:
                 response = self.request(url=next_link[1])
