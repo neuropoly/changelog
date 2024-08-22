@@ -142,21 +142,16 @@ class GithubAPI(object):
                    'per_page': 100,
                    'page': 0}
 
-        r = {'items': []}
-
-        received_items = 0
+        items = []
         total_count = 1
-        while received_items < total_count:
+        while len(items) < total_count:
             payload['page'] += 1
-            r_temp = self.request(url=url, params=payload).json()
-            total_count = r_temp['total_count']
-            received_items += len(r_temp['items'])
-            r['items'].extend(r_temp['items'])
-            r['total_count'] = r_temp['total_count']
-            r['incomplete_results'] = r_temp.get('incomplete_results')
+            response = self.request(url=url, params=payload).json()
+            total_count = response['total_count']
+            items.extend(response['items'])
 
-        logger.info(f"Milestone: {milestone}, Label: {label}, Count: {r['total_count']}")
-        return r
+        logger.info(f"Milestone: {milestone}, Label: {label}, Count: {total_count}")
+        return items
 
 
 def escape(string):
@@ -388,8 +383,7 @@ def main():
 
     if header_labels:
         for header_label in header_labels:
-            pull_requests = api.search(milestone['title'], header_label)
-            items = pull_requests['items']
+            items = api.search(milestone['title'], header_label)
             if items:
                 # If a single header is given as an input, don't add H3
                 if header_label and len(header_labels) >= 2:
@@ -403,8 +397,7 @@ def main():
                 changelog_pr.update(some_changelog_pr)
     else:
         for label in labels:
-            pull_requests = api.search(milestone['title'], label)
-            items = pull_requests['items']
+            items = api.search(milestone['title'], label)
             if items:
                 if label:
                     lines.extend([
@@ -415,7 +408,7 @@ def main():
                 lines.extend(generator(items))
 
     logger.info('Total number of pull requests with label: %d', len(changelog_pr))
-    all_pr = set(pr['html_url'] for pr in api.search(milestone['title'])['items'])
+    all_pr = set(pr['html_url'] for pr in api.search(milestone['title']))
     diff_pr = all_pr - changelog_pr
     for diff in diff_pr:
         logger.warning('Pull request not labeled: %s', diff)
