@@ -129,11 +129,14 @@ class GithubAPI(object):
         Return a list of merged pull requests linked to the milestone and label provided.
         """
         url = f"{self.api_url_prefix}/search/issues"
-        query = f'milestone:"{milestone}" is:pr repo:{self.repo_url} state:closed is:merged'
-        if label:
-            query += f' label:"{label}"'
-        else:
-            query += ' no:label'
+        query = ' '.join(f'{op}:{escape(val)}' for op, val in [
+            ('milestone', milestone),
+            ('is', 'pr'),
+            ('repo', self.repo_url),
+            ('state', 'closed'),
+            ('is', 'merged'),
+            ('no', 'label') if label is None else ('label', label),
+        ])
 
         payload = {'q': query,
                    'per_page': 100,
@@ -154,6 +157,27 @@ class GithubAPI(object):
 
         logger.info(f"Milestone: {milestone}, Label: {label}, Count: {r['total_count']}")
         return r
+
+
+def escape(string):
+    r"""
+    Quote and escape a search term used in a Github search query, if it
+    contains a space or a double-quote character.
+
+    Note that only double-quote characters need to be escaped, *not* backslash
+    characters. So instead of the usual sequence of escapes, which roughly
+    doubles the number of backslashes at each step:
+
+    " -> \" -> \\\" -> \\\\\\\" -> ...
+
+    Github only adds one backslash at each step:
+
+    " -> \" -> \\" -> \\\" -> ...
+    """
+    if ' ' in string or '"' in string:
+        string = string.replace('"', r'\"')
+        string = f'"{string}"'
+    return string
 
 
 def get_custom_options(repo):
